@@ -1,18 +1,35 @@
 // Dependencies
-const { loadNotes, addNote, deleteNote } = require('../lib/notes');
+const fs = require("fs");
+const { v4: uuidv4 } = require('uuid');
 const router = require("express").Router();
+const path = require("path");
 
-// Routes
-router.get("/api/notes", (req, res) => {
-    loadNotes(req,res);
+// Load notes from file
+router.get("/api/notes", (request, response) => {
+    const notes = JSON.parse(fs.readFileSync(path.join(__dirname, "../db/db.json")));
+    response.json(notes);
 });
 
-router.post("/api/notes", (req, res) => {   
-    addNote(req,res);
+
+// Add a new note
+router.post("/api/notes", (request, response) => {
+    const newNote = request.body;
+    newNote.id = uuidv4();
+    let data = JSON.parse(fs.readFileSync("./db/db.json", "utf8"));
+    data.push(newNote);
+    fs.writeFileSync('./db/db.json', JSON.stringify(data));
+    response.json(data);
 });
 
-router.delete("/api/notes/:id", (req, res) => {
-    deleteNote(req,res);
+
+// Delete a note
+router.delete("/api/notes/:id", (request, response) => {
+    let noteId = request.params.id.toString();
+    let data = JSON.parse(fs.readFileSync("./db/db.json", "utf8"));
+    let updatedNotes = data.filter(note => note.id !== noteId);
+    fs.writeFileSync('./db/db.json', JSON.stringify(updatedNotes));
+
+    response.json(updatedNotes);
 });
 
 // Export routes for server.js to use.
